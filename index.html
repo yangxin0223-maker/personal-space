@@ -303,6 +303,30 @@ function initScroll(){
     }});
     etabs.forEach(function(tb,k){tb.addEventListener('click',function(){lenis.scrollTo(k===0?est.start+4:est.end-4,{duration:1.1});});});
   }
+  /* 仅手机/平板:分页吸附(整屏 + 作品逐卡),桌面不启用,布局与效果均不变 */
+  var PG=window.matchMedia('(max-width:1024px)').matches||window.matchMedia('(pointer:coarse)').matches;
+  if(PG){
+    var nWork=document.querySelectorAll('.work').length||1;
+    function pgStops(){
+      var sc=(typeof lenis!=='undefined'&&lenis.scroll!=null)?lenis.scroll:(window.scrollY||0);
+      var s=[0],mq=document.querySelector('.marquee'),ab=document.getElementById('about'),vs=document.querySelector('.video-sec');
+      if(mq)s.push(mq.getBoundingClientRect().top+sc);
+      if(ab)s.push(ab.getBoundingClientRect().top+sc);
+      if(wt&&wt.scrollTrigger){var ws=wt.scrollTrigger.start,we=wt.scrollTrigger.end;for(var i=0;i<nWork;i++)s.push(ws+(we-ws)*(nWork>1?i/(nWork-1):0));}
+      if(vs)s.push(vs.getBoundingClientRect().top+sc);
+      if(typeof est!=='undefined'&&est){s.push(est.start);s.push(est.end);}
+      return s.sort(function(a,b){return a-b;});
+    }
+    var snapT,snapping=false;
+    lenis.on('scroll',function(e){
+      if(snapping)return;clearTimeout(snapT);
+      snapT=setTimeout(function(){
+        var cur=(lenis.scroll!=null)?lenis.scroll:(window.scrollY||0),stops=pgStops(),best=stops[0],k;
+        for(k=1;k<stops.length;k++)if(Math.abs(stops[k]-cur)<Math.abs(best-cur))best=stops[k];
+        if(Math.abs(best-cur)>3){snapping=true;lenis.scrollTo(best,{duration:0.55,easing:function(t){return 1-Math.pow(1-t,3);},onComplete:function(){snapping=false;}});setTimeout(function(){snapping=false;},800);}
+      },150);
+    });
+  }
   ScrollTrigger.refresh();
 }
 
